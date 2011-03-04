@@ -1,0 +1,108 @@
+
+
+ABOUT
+-------------------------------------------------------------------
+
+This is a drop-in replacement for malloc/free that is designed from
+the ground up to be used in scalable server software.
+
+Why another memory allocator?
+
+
+Here are the advantages of our allocator:
+
+ * It's thread-friendly. It supports a practically-unlimited number of
+   concurrent threads, without locking or performance degradation.
+
+ * It's efficient, especially in a multi-threaded environment.
+   Compared to a stock libc allocator, we see a significant
+   performance boost.
+
+ * It does NOT fragment or leak memory, unlike a stock libc allocator.
+
+ * It wastes less memory. For small objects (less than 8kb in size),
+   the overhead is around 0 bytes. (!)
+
+ * It is designed from the ground-up for 64-bit architectures.
+
+ * It is elegant. The whole codebase is only around 800 lines of
+   fairly clean C++. (!)
+
+ * It fully stand-alone; it does not rely on pthreads or libc at runtime.
+
+
+The disadvantages:
+
+ * Works only with a x86_64 CPU.
+
+ * It does not try to economise on virtual memory mapping space.
+
+ * Memory used for small objects (those less than 128kb in size) is
+   cached within the allocator and is never released back to the OS. 
+   In practice, this means that your app will stabilize at some peak
+   usage of memory and will, from that moment on, rarely ask the OS
+   for memory allocation or deallocation.
+
+
+USAGE
+-------------------------------------------------------------------
+
+Build requirements:
+
+For building the library, you will need:
+
+ * g++
+
+ * The headers of the boost libraries. (http://www.boost.org)
+   At the minimum, you will need at least the static_assert, mpl,  
+   cstdint.hpp and noncopyable.hpp.
+
+
+Usage requirements:
+
+ * An x86_64 CPU.
+
+ * An OS with sane mmap/munmap support. 
+   We have tested only on Linux.
+
+
+Compiling:
+
+Edit Makefile to set the path of your boost includes and your build
+options; type 'make' to build a static and a shared version of the
+library.
+
+Note: we recommend integrating the allocator into your own
+project(s). The enclosed Makefile is intended only as a demonstration,
+not a complete build solution.
+
+
+Using the library: 
+
+There are three options:
+
+ 1. Compile into a statically-linked application. 
+    For this, you must: 
+      * Compile your application's object files as normal. 
+      * Compile 'lite-malloc.cpp', or use the
+       'liblite-malloc-static.a' generated with the enclosed Makefile.
+      * Link your app with the '-static' flag, and these linker flags
+        for wrapping:
+
+   -Wl,--wrap,malloc -Wl,--wrap,free -Wl,--wrap,calloc
+   -Wl,--wrap,realloc -Wl,--wrap,memalign -Wl,--wrap,valloc
+   -Wl,--wrap,posix_memalign 
+
+ 2. Link with a shared library. Linking with
+    'liblite-malloc-shared.so' should work.
+
+ 3. Via standard glibc malloc hooks.
+    To enable, just include 'lite-hooks.h' as the first line of your program.
+
+
+CREDITS
+-------------------------------------------------------------------
+
+ZAO "Begun"
+
+https://github.com/Begun/lockfree-malloc
