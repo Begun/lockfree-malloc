@@ -21,7 +21,6 @@ $(STATIC_LIB): lite-malloc.o
 	ar rc $(STATIC_LIB) lite-malloc.o 
 
 $(SHARED_LIB): lite-malloc.o
-	$(CXX) $(LFLAGS) lite-malloc.o -shared -o $(SHARED_LIB)
 	objcopy --redefine-sym __wrap_malloc=malloc \
 		--redefine-sym __wrap_free=free \
 		--redefine-sym __wrap_calloc=calloc \
@@ -29,9 +28,10 @@ $(SHARED_LIB): lite-malloc.o
 		--redefine-sym __wrap_memalign=memalign \
 		--redefine-sym __wrap_posix_memalign=posix_memalign \
 		--redefine-sym __wrap_valloc=valloc \
-		$(SHARED_LIB)
+		lite-malloc.o lite-malloc-shared.o
+	$(CXX) $(LFLAGS) lite-malloc-shared.o -shared -o $(SHARED_LIB)
 
 clean:
-	-rm -f lite-malloc.o $(STATIC_LIB) $(SHARED_LIB) 
+	-rm -f lite-malloc.o lite-malloc-shared.o $(STATIC_LIB) $(SHARED_LIB) 
 
 

@@ -32,7 +32,7 @@ void * __wrap_calloc (size_t n, size_t size)
 
 //TODO: real memalign is more complex, hope nobody uses it
 
-void * __wrap_memalign (size_t align, size_t size, void const *caller)
+void * __wrap_memalign (size_t align, size_t size)
 {
     ::abort();
 }
