@@ -100,6 +100,13 @@ There are three options:
     To enable, just include 'lite-hooks.h' as the first line of your program.
 
 
+IMPORTANT NOTES:
+
+Linux has an OS-imposed limit on the number of virtual memory mappings.
+If you want to allocate large amounts of memory, you may need to adjust this 
+limit via /proc/sys/vm/max_map_count.
+
+
 CREDITS
 -------------------------------------------------------------------
 
