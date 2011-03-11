@@ -110,6 +110,9 @@ limit via /proc/sys/vm/max_map_count.
 CREDITS
 -------------------------------------------------------------------
 
-ZAO "Begun"
+(c) 2011, ZAO "Begun"
 
 https://github.com/Begun/lockfree-malloc
+
+This library is licensed under the GNU LGPL. Please see the file LICENSE.
+
