@@ -15,6 +15,8 @@
 #ifndef __LOCKFREE_SINGLETON_H
 #define __LOCKFREE_SINGLETON_H 1
 
+#include <new>
+
 #include "aux_.h"
 
 namespace lockfree

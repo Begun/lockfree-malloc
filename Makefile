@@ -6,7 +6,7 @@ CXX = g++
 CFLAGS = -I$(BOOST_INCLUDES) -O3 -finline-functions -Wno-inline -Wall -pthread
 LFLAGS =
 
-IDEPS = aux_.h lite-hooks-wrap.h lite-malloc.h  stack.h  u-singleton.h 
+IDEPS = aux_.h lite-hooks-wrap.h lite-malloc.h  stack.h  u-singleton.h l-singleton.h 
  
 STATIC_LIB = liblite-malloc-static.a
 SHARED_LIB = liblite-malloc-shared.so

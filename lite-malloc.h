@@ -23,6 +23,7 @@
 #include <boost/static_assert.hpp>
 
 #include "u-singleton.h"
+#include "l-singleton.h"
 #include "stack.h"
 
 
