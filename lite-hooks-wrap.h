@@ -17,6 +17,7 @@
 
 #include "lite-malloc.h"
 #include <malloc.h>
+#include <stdlib.h>
 
 extern "C" {
 

@@ -19,10 +19,7 @@
 #include <string.h>
 #include <cstdarg>
 
-#include <boost/noncopyable.hpp>
-#include <boost/static_assert.hpp>
-
-#include "u-singleton.h"
+//#include "u-singleton.h"
 #include "l-singleton.h"
 #include "stack.h"
 
@@ -31,20 +28,18 @@
 namespace lite
 {
 
-unsigned const header_size = 32; //alignment
-
 struct Sb
 {
     struct Pool *home;
-
-    char *raw () const {return (char *) this + header_size;}
-
     size_t data_size;
     size_t mmap_size;
     void* mmap_addr;
-};
 
-BOOST_STATIC_ASSERT (header_size >= sizeof (Sb));
+    char *raw () {return &this->last_one;}
+    // 32 byte aligned
+    char last_one;
+};
+unsigned const header_size = offsetof(Sb, last_one);
 
 size_t const grid_step_log2 = 18;
 size_t const grid_step = 1 << grid_step_log2;
@@ -58,10 +53,6 @@ size_t grid_align (size_t s)
     return ((s - 1) & grid_mask) + grid_step;
 }
 
-struct Cstat
-{
-    size_t size, count;
-};
 
 struct Sb_cache
 {
@@ -176,7 +167,7 @@ private:
 };
 
 //TODO: split exact/inexact pool
-struct Pool
+struct __attribute__ ((aligned(32))) Pool
 {
     Pool () : raw (0), elem_size (0) {}
 
@@ -237,10 +228,8 @@ public:
     lf::Stack <lf::Link> freed; 
     char *raw;
     size_t elem_size;
-    size_t cache_line_padding;
 };
 
-BOOST_STATIC_ASSERT (sizeof (Pool) == 32 || sizeof (Pool) == 64);
 
 inline
 size_t block_size (void *p)
@@ -254,12 +243,18 @@ size_t block_size (void *p)
     return 0;
 }
 
-class Engine : public boost::noncopyable
+class Engine
 {
     Sb_cache sb_cache;
 
     static size_t const pools_count = 1023; //up to 8Kb
     Pool pools [pools_count];
+
+    // boost::noncopyable replacement
+    Engine(Engine&);
+    Engine(const Engine&);
+    Engine& operator=(Engine&);
+    Engine& operator=(const Engine&);
 
 public:
 

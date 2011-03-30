@@ -20,37 +20,20 @@
 #include <unistd.h>
 #include <sys/mman.h>
 
-#include <boost/cstdint.hpp>
-#include <boost/mpl/if.hpp>
-
 namespace lockfree
 {
 
 static size_t const ptr_size = sizeof (void *);
 
+template <size_t s>
+struct cas_type { typedef typename cas_type<s-1>::type type; };
+template<> struct cas_type<0> { typedef void type; };
+template<> struct cas_type<sizeof(char)> { typedef char type; };
+template<> struct cas_type<sizeof(char)+1> { typedef short type; };
+template<> struct cas_type<sizeof(short)+1> { typedef int type; };
+template<> struct cas_type<sizeof(int)+1> { typedef long type; };
+template<> struct cas_type<sizeof(long)+1> { typedef void type; };
 
-
-inline
-bool
-cas_aux (__uint128_t *f, __uint128_t o, __uint128_t n)
-{   
-    bool res;
-
-    asm
-    (
-        "rex64 lock cmpxchg8b (%1)\n\t"
-        "setz %0\n\t"
-        :   "=r" (res)
-        :
-        "r" (f),
-        "d" ((size_t) (o >> 64)),
-        "a" ((size_t) (o >> 0)),
-        "c" ((size_t) (n >> 64)),
-        "b" ((size_t) (n >> 0))
-    );
-
-    return res;
-}
 
 template <typename T>
 bool
@@ -63,12 +46,7 @@ template <typename T>
 bool
 cas (T *p, T const &c, T const &s)
 {
-    typedef typename boost::mpl::if_c <sizeof (T) <= 1, char,
-            typename boost::mpl::if_c <sizeof (T) <= 2, short,
-            typename boost::mpl::if_c <sizeof (T) <= 4, int,
-            typename boost::mpl::if_c <sizeof (T) <= 8, long,
-            typename boost::mpl::if_c <sizeof (T) <= 16, __uint128_t,
-                                       void>::type>::type>::type>::type>::type Raw;
+    typedef typename cas_type<sizeof(T)>::type Raw;
 
     union
     {
