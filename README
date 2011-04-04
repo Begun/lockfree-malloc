@@ -53,10 +53,6 @@ For building the library, you will need:
 
  * g++
 
- * The headers of the boost libraries. (http://www.boost.org)
-   At the minimum, you will need at least the static_assert, mpl,  
-   cstdint.hpp and noncopyable.hpp.
-
 
 Usage requirements:
 
@@ -68,9 +64,8 @@ Usage requirements:
 
 Compiling:
 
-Edit Makefile to set the path of your boost includes and your build
-options; type 'make' to build a static and a shared version of the
-library.
+Edit Makefile to set your build options; type 'make' to build a static 
+and a shared version of the library.
 
 Note: we recommend integrating the allocator into your own
 project(s). The enclosed Makefile is intended only as a demonstration,
