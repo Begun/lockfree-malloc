@@ -16,6 +16,7 @@
 #define __LOCKFREE_LITE_MALLOC_H 1
 
 
+#include <stddef.h>
 #include <string.h>
 #include <cstdarg>
 
@@ -39,7 +40,7 @@ struct Sb
     // 32 byte aligned
     char last_one;
 };
-unsigned const header_size = offsetof(Sb, last_one);
+size_t const header_size = offsetof(Sb, last_one);
 
 size_t const grid_step_log2 = 18;
 size_t const grid_step = 1 << grid_step_log2;

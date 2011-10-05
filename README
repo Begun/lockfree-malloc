@@ -43,6 +43,9 @@ The disadvantages:
    usage of memory and will, from that moment on, rarely ask the OS
    for memory allocation or deallocation.
 
+!!!
+PLEASE NOTE: the functions memalign, posix_memalign and valloc are not supported by our allocator.
+!!!
 
 USAGE
 -------------------------------------------------------------------
