@@ -24,6 +24,11 @@
 #include "l-singleton.h"
 #include "stack.h"
 
+#ifdef __FreeBSD__
+#define __MAP_ANONYMOUS MAP_ANON
+#else
+#define __MAP_ANONYMOUS MAP_ANONYMOUS
+#endif
 
 
 namespace lite
@@ -159,7 +164,7 @@ private:
         void * p = mmap (hint,
                          size,
                          PROT_WRITE | PROT_READ,
-                         MAP_PRIVATE | MAP_ANONYMOUS | (hint ? MAP_FIXED : 0),
+                         MAP_PRIVATE | __MAP_ANONYMOUS | (hint ? MAP_FIXED : 0),
                          -1 /*fd*/,
                          0);
         return (char *) ((long) p == -1 ? 0 : p);

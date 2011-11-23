@@ -16,7 +16,9 @@
 #define __LOCKFREE_LITE_HOOKS_WRAP_H 1
 
 #include "lite-malloc.h"
+#ifndef __FreeBSD__
 #include <malloc.h>
+#endif
 #include <stdlib.h>
 
 extern "C" {

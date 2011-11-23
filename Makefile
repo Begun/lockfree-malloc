@@ -1,6 +1,7 @@
 
 # Please specify the directory with boost include files here.
-BOOST_INCLUDES = /usr/include
+PREFIX = /usr/local
+BOOST_INCLUDES = ${PREFIX}/include
 
 CXX = g++
 CFLAGS = -I$(BOOST_INCLUDES) -O3 -finline-functions -Wno-inline -Wall -pthread
