@@ -15,8 +15,6 @@ COMMENT=	The world is first Web-scale memory allocator
 
 LICENSE=	LGPL3
 
-LIB_DEPENDS=	boost_system:${PORTSDIR}/devel/boost-libs
-
 DATE=		20120802
 ONLY_FOR_ARCHS=	amd64
 USE_LDCONFIG=	yes
