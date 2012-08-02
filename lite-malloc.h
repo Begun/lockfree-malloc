@@ -16,6 +16,28 @@
 #define __LOCKFREE_LITE_MALLOC_H 1
 
 
+// Mmap blocks less then LITE_MALLOC_SUPERBLOCK_CACHE_SIZE * 4096 bytes in size
+// will be cached.
+ 
+#ifndef LITE_MALLOC_SUPERBLOCK_CACHE_SIZE
+#define LITE_MALLOC_SUPERBLOCK_CACHE_SIZE 32
+#endif
+ 
+// Blocks less then LITE_MALLOC_MINIBLOCK_CACHE_SIZE * 8 bytes in size 
+// will be cached in pool allocator.
+
+#ifndef LITE_MALLOC_MINIBLOCK_CACHE_SIZE 
+#define LITE_MALLOC_MINIBLOCK_CACHE_SIZE 1024
+#endif
+
+// Use LITE_MALLOC_ENGINES_COUNT independent allocator engines.
+
+#ifndef LITE_MALLOC_ENGINES_COUNT
+#define LITE_MALLOC_ENGINES_COUNT 32
+#endif
+
+
+
 #include <stddef.h>
 #include <string.h>
 #include <cstdarg>
@@ -41,6 +63,11 @@ struct Sb
     size_t mmap_size;
     void* mmap_addr;
 
+    size_t engine_id;
+    size_t _pad1;
+    size_t _pad2;
+    size_t _pad3;
+
     char *raw () {return &this->last_one;}
     // 32 byte aligned
     char last_one;
@@ -62,11 +89,9 @@ size_t grid_align (size_t s)
 
 struct Sb_cache
 {
-    Sb_cache () /*: cur ((char*) grid_align (0x2aeacd6a6000ul))*/ {}
+    Sb_cache () {}
 
-    //char *cur;
-
-    Sb *pop (Pool *home, size_t size)
+    Sb *pop (Pool *home, size_t size, size_t engine_id)
     {
         size_t sz = align_up (size, lf::base_page);
 
@@ -76,6 +101,7 @@ struct Sb_cache
 
         if (sb)
         {
+            sb->engine_id = engine_id;
             sb->home = home;
             sb->data_size = sz;
             sb->mmap_size = mmap_size;
@@ -97,7 +123,7 @@ struct Sb_cache
 
 private:
 
-    static size_t const caches_count = 32;
+    static size_t const caches_count = LITE_MALLOC_SUPERBLOCK_CACHE_SIZE;
     lf::Stack <lf::Link> caches [caches_count];
 
     static size_t cache_offset (size_t size) {return size / lf::base_page - 1;}
@@ -117,45 +143,12 @@ private:
 
         size_t pp = (size_t) p, ga = grid_align (pp); //, head = ga - pp, tail = sx - size - head;
 
-        //if (head)
-        //    munmap (p, head);
-
-        //if (tail)
-        //    munmap (p + size + head, tail);
-
         char *np = (char *) ga;
 
         mmap_addr = p;
         mmap_size = sx;
 
         return (Sb*) np;
-
-        
-        /*
-        size_t s = grid_align (size), sx = size + grid_step;
-        for ( ; ; )
-        {
-            char *c = cur;
-            if (lf::cas (&cur, c, c + s))
-            {
-                char *p = map (c, size);
-
-                if (p)
-                    return (Sb *) p;
-
-                p = map (0, sx);
-                if (!p)
-                    return 0;
-
-                size_t pp = (size_t) p, ga = grid_align (pp), head = ga - pp, tail = sx - size - head;
-                munmap (p, head);
-                munmap (p + size + head, tail);
-                char *np = (char *) ga;
-                lf::cas (&cur, c, np);
-                return (Sb*) np;
-            }
-        }
-        */
     }
 
     static
@@ -183,16 +176,16 @@ struct __attribute__ ((aligned(32))) Pool
         return elem_size;
     }
 
-    void *pop (Sb_cache &cache, size_t size)
+    void *pop (Sb_cache &cache, size_t size, size_t engine_id)
     {
         (void) size;
-        return aux_pop (cache);
+        return aux_pop (cache, engine_id);
     }
 
 
 private:
 
-    char *aux_pop (Sb_cache &cache)
+    char *aux_pop (Sb_cache &cache, size_t engine_id)
     {
         Sb *sb = 0;
         char *result = 0;
@@ -207,7 +200,7 @@ private:
             if (r == 0 || off == 0 || off + elem_size > sb_size)
             {
                 if (!sb)
-                    sb = cache.pop (this, sb_size);
+                    sb = cache.pop (this, sb_size, engine_id);
 
                 if (lf::cas (&raw, r, sb->raw () + elem_size))
                 {
@@ -249,11 +242,23 @@ size_t block_size (void *p)
     return 0;
 }
 
+inline
+size_t block_engine_n (void *p)
+{
+    if (p)
+    {
+        Sb *sb = (Sb *) ((size_t) p & grid_mask);
+        return sb->engine_id;
+    }
+
+    return 0;
+}
+
 class Engine
 {
     Sb_cache sb_cache;
 
-    static size_t const pools_count = 1023; //up to 8Kb
+    static size_t const pools_count = LITE_MALLOC_MINIBLOCK_CACHE_SIZE - 1; //up to 8Kb
     Pool pools [pools_count];
 
     // boost::noncopyable replacement
@@ -264,7 +269,9 @@ class Engine
 
 public:
 
-    Engine ()
+    size_t engine_id;
+
+    Engine () : engine_id(0)
     {
         for (size_t i = 0; i < pools_count; ++i)
             pools [i].elem_size = (i + 1) * lf::ptr_size;
@@ -279,9 +286,9 @@ public:
 
         size_t words = (size + lf::ptr_size - 1) / lf::ptr_size, off = words - 1;
         if (off < pools_count)
-            return pools [off].pop (sb_cache, words * lf::ptr_size);
+            return pools [off].pop (sb_cache, words * lf::ptr_size, engine_id);
 
-        Sb *sb = sb_cache.pop (0, size + header_size);
+        Sb *sb = sb_cache.pop (0, size + header_size, engine_id);
         if (!sb)
             return 0;
         return sb->raw ();
@@ -337,7 +344,62 @@ public:
 
 };
 
+class EnginePool
+{
+ 
+    static size_t const engines_count = LITE_MALLOC_ENGINES_COUNT;
+    Engine engines [engines_count];
 
+    size_t alloc_count;
+
+    // boost::noncopyable replacement
+    EnginePool(EnginePool&);
+    EnginePool(const EnginePool&);
+    EnginePool& operator=(EnginePool&);
+    EnginePool& operator=(const EnginePool&);
+
+public:
+
+    EnginePool () : alloc_count(0)
+    {
+        for (size_t i = 0; i < engines_count; ++i)
+            engines [i].engine_id = i + 1;
+    }
+
+    void *do_malloc (size_t size)
+    {
+        size_t en = lf::atomic_inc(&alloc_count);
+
+        return engines [en % engines_count].do_malloc(size);
+    }
+
+    void do_free (void *p) 
+    {
+        size_t engine = block_engine_n(p);
+
+        if (engine)
+            engines [engine-1].do_free(p);
+    }    
+
+    void *do_calloc (size_t n, size_t m)
+    {
+        size_t en = lf::atomic_inc(&alloc_count);
+
+        return engines [en % engines_count].do_calloc(n, m);
+    }
+
+    void *do_realloc (void *p, size_t size)
+    {
+        size_t engine = block_engine_n(p);
+
+        if (!engine)
+            engine = lf::atomic_inc(&alloc_count) % engines_count;
+        else
+            engine = engine - 1;
+
+        return engines [engine].do_realloc(p, size);
+    }
+};
 
 } //namespace lite
 

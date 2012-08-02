@@ -27,22 +27,22 @@ void * __wrap_malloc (size_t size, void const *) __attribute__ ((malloc));
 
 void * __wrap_malloc (size_t size, void const *)
 {
-    return lockfree::singleton <lite::Engine> ().do_malloc (size);
+    return lockfree::singleton <lite::EnginePool> ().do_malloc (size);
 }
 
 void __wrap_free (void *p, void const *)
 {
-    lockfree::singleton <lite::Engine> ().do_free (p);
+    lockfree::singleton <lite::EnginePool> ().do_free (p);
 }
 
 void * __wrap_realloc (void *p, size_t size, void const *)
 {
-    return lockfree::singleton <lite::Engine> ().do_realloc (p, size);
+    return lockfree::singleton <lite::EnginePool> ().do_realloc (p, size);
 }
 
 void * __wrap_calloc (size_t n, size_t size)
 {
-    void* ret = lockfree::singleton <lite::Engine> ().do_malloc (size * n);
+    void* ret = lockfree::singleton <lite::EnginePool> ().do_malloc (size * n);
     ::memset(ret, 0, size * n);
     return ret;
 }

@@ -62,7 +62,7 @@ Usage requirements:
  * An x86_64 CPU.
 
  * An OS with sane mmap/munmap support. 
-   We have tested only on Linux.
+   We have production-tested only on Linux. (But it should work with FreeBSD too.)
 
 
 Compiling:
@@ -77,7 +77,7 @@ not a complete build solution.
 
 Using the library: 
 
-There are three options:
+There are four options:
 
  1. Compile into a statically-linked application. 
     For this, you must: 
@@ -96,6 +96,10 @@ There are three options:
 
  3. Via standard glibc malloc hooks.
     To enable, just include 'lite-hooks.h' as the first line of your program.
+
+ 4. Via the magic LD_PRELOAD environment variable:
+
+   $ LD_PRELOAD=<full pathname>/liblite-malloc-shared.so <your application>
 
 
 IMPORTANT NOTES:
