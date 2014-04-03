@@ -77,7 +77,7 @@ not a complete build solution.
 
 Using the library: 
 
-There are four options:
+There are five options:
 
  1. Compile into a statically-linked application. 
     For this, you must: 
@@ -100,6 +100,13 @@ There are four options:
  4. Via the magic LD_PRELOAD environment variable:
 
    $ LD_PRELOAD=<full pathname>/liblite-malloc-shared.so <your application>
+
+ 5. Compile a malloc hook static library into your dynamically-linked application.
+    Follow the instructions in option 1, except omit the '-static' flag, and add these linker flags:
+
+   -Wl,--defsym=malloc=__wrap_malloc -Wl,--defsym=free=__wrap_free -Wl,--defsym=calloc=__wrap_calloc
+   -Wl,--defsym=realloc=__wrap_realloc -Wl,--defsym=memalign=__wrap_memalign -Wl,--defsym=valloc=__wrap_valloc
+   -Wl,--defsym=posix_memalign=__wrap_posix_memalign
 
 
 IMPORTANT NOTES:
