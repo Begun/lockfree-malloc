@@ -25,17 +25,17 @@ void * malloc_hook (size_t size, void const *) __attribute__ ((malloc));
 
 void * malloc_hook (size_t size, void const *)
 {
-    return util::singleton <lite::EnginePool> ().do_malloc (size);
+    return lockfree::singleton <lite::EnginePool> ().do_malloc (size);
 }
 
 void free_hook (void *p, void const *)
 {
-    util::singleton <lite::EnginePool> ().do_free (p);
+    lockfree::singleton <lite::EnginePool> ().do_free (p);
 }
 
 void * realloc_hook (void *p, size_t size, void const *)
 {
-    return util::singleton <lite::EnginePool> ().do_realloc (p, size);
+    return lockfree::singleton <lite::EnginePool> ().do_realloc (p, size);
 }
 
 #if 0

@@ -42,7 +42,6 @@
 #include <string.h>
 #include <cstdarg>
 
-//#include "u-singleton.h"
 #include "l-singleton.h"
 #include "stack.h"
 
