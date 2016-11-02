@@ -1,14 +1,10 @@
 
-# Please specify the directory with boost include files here.
-PREFIX = /usr/local
-BOOST_INCLUDES = ${PREFIX}/include
-
 CXX = g++
-CFLAGS = -I$(BOOST_INCLUDES) -O3 -finline-functions -Wno-inline -Wall -pthread
+CFLAGS = -std=c++11 -O3 -finline-functions -Wno-inline -Wall -pthread
 LFLAGS =
 
-IDEPS = aux_.h lite-hooks-wrap.h lite-malloc.h stack.h l-singleton.h 
- 
+IDEPS = lite-hooks-wrap.h lite-malloc.h stack.h l-singleton.h 
+
 STATIC_LIB = liblite-malloc-static.a
 SHARED_LIB = liblite-malloc-shared.so
 

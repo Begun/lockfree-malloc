@@ -19,6 +19,9 @@
 #ifndef __FreeBSD__
 #include <malloc.h>
 #endif
+
+#include <new>
+
 #include <stdlib.h>
 
 extern "C" {
