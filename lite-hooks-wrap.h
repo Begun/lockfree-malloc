@@ -54,17 +54,32 @@ void * __wrap_calloc (size_t n, size_t size)
 
 void * __wrap_memalign (size_t align, size_t size)
 {
-    ::abort();
-}
-void * __wrap_valloc(size_t size)
-{
-    ::abort();
+    size += align - 1;
+    void* ret = lockfree::singleton <lite::EnginePool> ().do_malloc (size);
+    char* rea = (char*)((size_t)ret & ~(align - 1));
+
+    if (rea < ret) {
+        rea += align;
+    }
+
+    return rea;
 }
 
-int __wrap_posix_memalign(void **memptr, size_t alignment, size_t size)
+void * __wrap_aligned_alloc(size_t align, size_t size)
 {
-    ::abort();
+    return __wrap_memalign (align, size);
 }
+
+int __wrap_posix_memalign(void **memptr, size_t align, size_t size) {
+    *memptr = __wrap_memalign (align, size);
+    return 0;
+}
+
+void * __wrap_valloc(size_t size)
+{
+    return __wrap_memalign(lf::base_page, size);
+}
+
 
 
 }
