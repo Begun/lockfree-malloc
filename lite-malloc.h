@@ -367,9 +367,9 @@ public:
 
     void *do_malloc (size_t size)
     {
-        size_t en = lf::atomic_inc(&alloc_count);
+        static thread_local size_t en{++alloc_count % engines_count};
 
-        return engines [en % engines_count].do_malloc(size);
+        return engines [en].do_malloc(size);
     }
 
     void do_free (void *p) 
@@ -382,17 +382,18 @@ public:
 
     void *do_calloc (size_t n, size_t m)
     {
-        size_t en = lf::atomic_inc(&alloc_count);
+        static thread_local size_t en{++alloc_count % engines_count};
 
-        return engines [en % engines_count].do_calloc(n, m);
+        return engines [en].do_calloc(n, m);
     }
 
     void *do_realloc (void *p, size_t size)
     {
+        static thread_local size_t en{++alloc_count % engines_count};
         size_t engine = block_engine_n(p);
 
         if (!engine)
-            engine = lf::atomic_inc(&alloc_count) % engines_count;
+            engine = en;
         else
             engine = engine - 1;
 
