@@ -25,6 +25,7 @@ $(SHARED_LIB): lite-malloc.o
 		--redefine-sym __wrap_memalign=memalign \
 		--redefine-sym __wrap_posix_memalign=posix_memalign \
 		--redefine-sym __wrap_valloc=valloc \
+		--redefine-sym __wrap_aligned_alloc=aligned_alloc \
 		lite-malloc.o lite-malloc-shared.o
 	$(CXX) $(LFLAGS) lite-malloc-shared.o -shared -o $(SHARED_LIB)
 

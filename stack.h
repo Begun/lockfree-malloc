@@ -17,7 +17,7 @@
 #ifndef LOCKFREE_STACK_H
 #define LOCKFREE_STACK_H 1
 
-#include "aux_.h"
+#include <atomic>
 
 namespace lockfree
 {
@@ -27,29 +27,23 @@ struct Stack
 {
     Stack () 
     {
-        m_head.ptr = 0;
-        m_head.tag = 0;
-    }
-
-    T*
-    head () const
-    {
-        return ptr (m_head);
+        Head const h = { 0, 0 };
+        m_head.store(h, std::memory_order_relaxed);
     }
 
     T*
     pop ()
     {
+        Head old = m_head.load(std::memory_order_relaxed);
+
         for ( ; ; )
         {
-            Head const old = m_head;
-
             if (ptr (old) == NULL)
                 return NULL;
 
             Head const h = {(long) ptr (old)->next, old.tag};
 
-            if (cas (&m_head, old, h))
+            if (m_head.compare_exchange_weak(old, h, std::memory_order_release, std::memory_order_relaxed))
             {
                 return ptr (old);
             }
@@ -59,69 +53,18 @@ struct Stack
     void
     push (T* obj)
     {
+        Head old = m_head.load(std::memory_order_relaxed);
         for ( ; ; )
         {
-            Head const old = m_head, h = {(long) obj, old.tag + 1};
+            Head const h = {(long) obj, old.tag + (size_t)1};
             obj->next = ptr (old);
-            if (cas (&m_head, old, h))
+
+            if (m_head.compare_exchange_weak(old, h, std::memory_order_release, std::memory_order_relaxed))
                 return;
         }
-    }
-
-    void
-    rob (Stack &r)
-    {
-        push_all (r.pop_all ()); 
-    }
-
-    size_t
-    size () const
-    {
-        return 0;
     }
 
 private:
-
-    //TODO: support count in *all versions
-    T*
-    pop_all ()
-    {
-        for ( ; ; )
-        {
-            Head const old = m_head;
-
-            if (ptr (old) == NULL)
-                return NULL;
-
-            Head const h = {0, old.tag};
-            if (cas (&m_head, old, h))
-                return ptr (old);
-        }
-    }
-
-    void
-    push_all (T *chain)
-    {
-        T *tail = NULL;
-        for ( ; ; )
-        {
-            Head const old = m_head, h = {(long) chain, old.tag + 1};
-
-            if (ptr (old) != NULL)
-            {
-                if (tail == NULL)
-                    for ( ; tail->next != NULL; tail = tail->next);
-
-                tail->next = ptr (old);
-            }
-            else
-                if (tail)
-                    tail->next = NULL;
-
-            if (cas (&m_head, old, h))
-                return;
-        }
-    }
 
     struct Head
     {
@@ -129,7 +72,7 @@ private:
         size_t tag : 16;
     };
 
-    Head m_head;
+    std::atomic <Head> m_head;
 
     static
     T*

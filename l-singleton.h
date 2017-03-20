@@ -16,37 +16,41 @@
 #define __LOCKFREE_SINGLETON_H 1
 
 #include <new>
-
-#include "aux_.h"
+#include <atomic>
 
 namespace lockfree
 {
 
 struct Once
 {
-    int l;
+    Once() : l(2) {}
+
+    std::atomic <int> l;
 
     bool
     lock_once ()
     {
+        int c = l.load(std::memory_order_relaxed);
+
         for ( ; ; )
         {
-            int c = l;
             if (c == 0)
                 return false;
 
-            if (c == 2 && cas (&l, 2, 1))
-                return true;
-
-            mfence ();
+            if (c == 2) {
+                if (l.compare_exchange_weak(c, 1, std::memory_order_release, std::memory_order_acquire)) {
+                    return true;
+                }
+            } else {
+                c = l.load(std::memory_order_acquire);
+            }
         }
     }
 
     void
     unlock ()
     {
-        l = 0;
-        mfence ();
+        l.store(0, std::memory_order_release);
     }
 };
 
@@ -64,7 +68,7 @@ struct Holder
 };
 
 template <typename T> Raw_ <T> Holder <T>::value = {{}}; //TODO
-template <typename T> Once Holder <T>::once = {2};
+template <typename T> Once Holder <T>::once;
 
 template <typename T>
 T &

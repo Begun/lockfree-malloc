@@ -37,11 +37,12 @@
 #endif
 
 
-
+#include <atomic>
 #include <stddef.h>
 #include <string.h>
 #include <cstdarg>
 
+#include "aux_.h"
 #include "l-singleton.h"
 #include "stack.h"
 
@@ -188,27 +189,29 @@ private:
     {
         Sb *sb = 0;
         char *result = 0;
+        char *r = raw.load(std::memory_order_relaxed);
+
         for ( ; ; )
         {
             result = (char *) freed.pop ();
             if (result)
                 break;
 
-            char *r = raw, *next = r + elem_size;
+            char *next = r + elem_size;
             size_t off = (size_t) r & offset_mask;
             if (r == 0 || off == 0 || off + elem_size > sb_size)
             {
                 if (!sb)
                     sb = cache.pop (this, sb_size, engine_id);
 
-                if (lf::cas (&raw, r, sb->raw () + elem_size))
+                if (raw.compare_exchange_weak(r, sb->raw () + elem_size, std::memory_order_release, std::memory_order_relaxed))
                 {
                     result = sb->raw ();
                     sb = 0;
                     break;
                 }
             }
-            else if (lf::cas (&raw, r, next))
+            else if (raw.compare_exchange_weak(r, next, std::memory_order_release, std::memory_order_relaxed))
             {
                 result = r;
                 break;
@@ -224,7 +227,7 @@ private:
 public:
 
     lf::Stack <lf::Link> freed; 
-    char *raw;
+    std::atomic <char*> raw;
     size_t elem_size;
 };
 
@@ -349,7 +352,7 @@ class EnginePool
     static size_t const engines_count = LITE_MALLOC_ENGINES_COUNT;
     Engine engines [engines_count];
 
-    size_t alloc_count;
+    std::atomic<size_t> alloc_count;
 
     // boost::noncopyable replacement
     EnginePool(EnginePool&);

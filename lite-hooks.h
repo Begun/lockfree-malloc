@@ -38,20 +38,26 @@ void * realloc_hook (void *p, size_t size, void const *)
     return lockfree::singleton <lite::EnginePool> ().do_realloc (p, size);
 }
 
-#if 0
 //TODO: real memalign is more complex, hope nobody uses it
 void * memalign_hook (size_t align, size_t size, void const *caller)
 {
-    return malloc_hook (size, caller);
+    size += align - 1;
+    void* ret = lockfree::singleton <lite::EnginePool> ().do_malloc (size);
+    char* rea = (char*)((size_t)ret & ~(align - 1));
+
+    if (rea < ret) {
+        rea += align;
+    }
+
+    return rea;
 }
-#endif
 
 static void init_hook ()
 {
     __malloc_hook = malloc_hook;
     __realloc_hook = realloc_hook;
     __free_hook = free_hook;
-//    __memalign_hook = memalign_hook;
+    __memalign_hook = memalign_hook;
 }
 
 } //namespace lite
