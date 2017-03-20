@@ -45,24 +45,12 @@ void * __wrap_realloc (void *p, size_t size, void const *)
 
 void * __wrap_calloc (size_t n, size_t size)
 {
-    void* ret = lockfree::singleton <lite::EnginePool> ().do_malloc (size * n);
-    ::memset(ret, 0, size * n);
-    return ret;
+    return lockfree::singleton <lite::EnginePool> ().do_calloc (n, size);
 }
-
-//TODO: real memalign is more complex, hope nobody uses it
 
 void * __wrap_memalign (size_t align, size_t size)
 {
-    size += align - 1;
-    void* ret = lockfree::singleton <lite::EnginePool> ().do_malloc (size);
-    char* rea = (char*)((size_t)ret & ~(size_t)(align - 1));
-
-    if (rea < ret) {
-        rea += align;
-    }
-
-    return rea;
+    return lite::do_memalign (align, size);
 }
 
 void * __wrap_aligned_alloc(size_t align, size_t size)
@@ -77,7 +65,7 @@ int __wrap_posix_memalign(void **memptr, size_t align, size_t size) {
 
 void * __wrap_valloc(size_t size)
 {
-    return __wrap_memalign(lf::base_page, size);
+    return __wrap_memalign (lf::base_page, size);
 }
 
 

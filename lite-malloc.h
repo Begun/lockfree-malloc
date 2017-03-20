@@ -64,14 +64,26 @@ struct Sb
     void* mmap_addr;
 
     size_t engine_id;
-    size_t _pad1;
+    size_t alignment;
     size_t _pad2;
     size_t _pad3;
 
-    char *raw () {return &this->last_one;}
+    char *raw ()
+    {
+        char* r = &this->last_one;
+        size_t n = (size_t)r & alignment;
+
+        if (n) {
+            r += alignment + 1 - n;
+        }
+
+        return r;
+    }
+
     // 32 byte aligned
     char last_one;
 };
+
 size_t const header_size = offsetof(Sb, last_one);
 
 size_t const grid_step_log2 = 18;
@@ -89,7 +101,7 @@ size_t grid_align (size_t s)
 
 struct Sb_cache
 {
-    Sb_cache () {}
+    Sb_cache (size_t a = 0) : alignment(a) {}
 
     Sb *pop (Pool *home, size_t size, size_t engine_id)
     {
@@ -104,6 +116,7 @@ struct Sb_cache
             sb->engine_id = engine_id;
             sb->home = home;
             sb->data_size = sz;
+            sb->alignment = alignment;
             sb->mmap_size = mmap_size;
             sb->mmap_addr = mmap_addr;
         }
@@ -125,6 +138,8 @@ private:
 
     static size_t const caches_count = LITE_MALLOC_SUPERBLOCK_CACHE_SIZE;
     lf::Stack <lf::Link> caches [caches_count];
+
+    size_t alignment;
 
     static size_t cache_offset (size_t size) {return size / lf::base_page - 1;}
 
@@ -176,9 +191,8 @@ struct __attribute__ ((aligned(32))) Pool
         return elem_size;
     }
 
-    void *pop (Sb_cache &cache, size_t size, size_t engine_id)
+    void *pop (Sb_cache &cache, size_t engine_id)
     {
-        (void) size;
         return aux_pop (cache, engine_id);
     }
 
@@ -263,17 +277,16 @@ class Engine
     static size_t const pools_count = LITE_MALLOC_MINIBLOCK_CACHE_SIZE - 1; //up to 8Kb
     Pool pools [pools_count];
 
-    // boost::noncopyable replacement
-    Engine(Engine&);
-    Engine(const Engine&);
-    Engine& operator=(Engine&);
-    Engine& operator=(const Engine&);
+    Engine(Engine&) = delete;
+    Engine(const Engine&) = delete;
+    Engine& operator=(Engine&) = delete;
+    Engine& operator=(const Engine&) = delete;
 
 public:
 
     size_t engine_id;
 
-    Engine () : engine_id(0)
+    Engine (size_t alignment = 0) : sb_cache(alignment), engine_id(0)
     {
         for (size_t i = 0; i < pools_count; ++i)
             pools [i].elem_size = (i + 1) * lf::ptr_size;
@@ -288,7 +301,7 @@ public:
 
         size_t words = (size + lf::ptr_size - 1) / lf::ptr_size, off = words - 1;
         if (off < pools_count)
-            return pools [off].pop (sb_cache, words * lf::ptr_size, engine_id);
+            return pools [off].pop (sb_cache, engine_id);
 
         Sb *sb = sb_cache.pop (0, size + header_size, engine_id);
         if (!sb)
@@ -354,15 +367,14 @@ class EnginePool
 
     std::atomic<size_t> alloc_count;
 
-    // boost::noncopyable replacement
-    EnginePool(EnginePool&);
-    EnginePool(const EnginePool&);
-    EnginePool& operator=(EnginePool&);
-    EnginePool& operator=(const EnginePool&);
+    EnginePool(EnginePool&) = delete;
+    EnginePool(const EnginePool&) = delete;
+    EnginePool& operator=(EnginePool&) = delete;
+    EnginePool& operator=(const EnginePool&) = delete;
 
 public:
 
-    EnginePool () : alloc_count(0)
+    EnginePool (size_t dummy = 0) : alloc_count(0)
     {
         for (size_t i = 0; i < engines_count; ++i)
             engines [i].engine_id = i + 1;
@@ -403,6 +415,23 @@ public:
         return engines [engine].do_realloc(p, size);
     }
 };
+
+void *do_memalign (size_t align, size_t size)
+{
+    size = align_up (size, align);
+
+    switch (align) {
+    case 16:
+        return lockfree::singleton <lite::Engine,16> ().do_malloc (size);
+    case 32:
+        return lockfree::singleton <lite::Engine,32> ().do_malloc (size);
+    case lf::base_page:
+        return lockfree::singleton <lite::Engine,lf::base_page> ().do_malloc (size);
+    default:
+        return 0;
+    }
+}
+
 
 } //namespace lite
 
