@@ -421,6 +421,8 @@ void *do_memalign (size_t align, size_t size)
     size = align_up (size, align);
 
     switch (align) {
+    case 8:
+        return lockfree::singleton <lite::EnginePool> ().do_malloc (size);
     case 16:
         return lockfree::singleton <lite::Engine,16> ().do_malloc (size);
     case 32:
