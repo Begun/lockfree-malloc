@@ -56,7 +56,7 @@ void * __wrap_memalign (size_t align, size_t size)
 {
     size += align - 1;
     void* ret = lockfree::singleton <lite::EnginePool> ().do_malloc (size);
-    char* rea = (char*)((size_t)ret & ~(align - 1));
+    char* rea = (char*)((size_t)ret & ~(size_t)(align - 1));
 
     if (rea < ret) {
         rea += align;
