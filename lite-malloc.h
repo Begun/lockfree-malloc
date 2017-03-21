@@ -394,7 +394,7 @@ public:
             engines [i].engine_id = i + 1;
 
         for (size_t i = plain_engines_count, a = 16; i < total_engines_count; ++i, a *= 2)
-            engines [i].alignment = a;
+            engines [i].alignment = a - 1;
     }
 
     void *do_malloc (size_t size)
@@ -436,12 +436,15 @@ public:
     {
         if (align <= 8)
             return do_malloc (size);
+
+        align--;
+        size = align_up (size, align);
         
         for (size_t i = plain_engines_count; i < total_engines_count; ++i)
         {
             if (engines [i].alignment == align)
             {
-                return engines [i].do_malloc(align_up(size, align));
+                return engines [i].do_malloc(size);
             }
         }
 
