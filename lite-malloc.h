@@ -363,12 +363,9 @@ public:
 
 };
 
-constexpr size_t log2(size_t n) {
-
-    if (n <= 1)
-        return 0;
-
-    return 1 + log2(n / 2);
+constexpr size_t log2(size_t n)
+{
+    return (n <= 1 ? 0 : 1 + log2(n / 2));
 }
 
 class EnginePool
