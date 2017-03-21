@@ -437,8 +437,8 @@ public:
         if (align <= 8)
             return do_malloc (size);
 
-        align--;
         size = align_up (size, align);
+        align--;
 
         for (size_t i = plain_engines_count; i < total_engines_count; ++i)
         {
