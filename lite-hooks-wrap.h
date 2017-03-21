@@ -50,7 +50,7 @@ void * __wrap_calloc (size_t n, size_t size)
 
 void * __wrap_memalign (size_t align, size_t size)
 {
-    return lite::do_memalign (align, size);
+    return lockfree::singleton <lite::EnginePool> ().do_memalign (align, size);
 }
 
 void * __wrap_aligned_alloc(size_t align, size_t size)

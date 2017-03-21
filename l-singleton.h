@@ -70,14 +70,14 @@ struct Holder
 template <typename T> Raw_ <T> Holder <T>::value = {{}}; //TODO
 template <typename T> Once Holder <T>::once;
 
-template <typename T, size_t Arg = 0>
+template <typename T>
 T &
 singleton ()
 {
     typedef Holder <T> H;
     if (H::once.lock_once ())
     {
-        new (&H::value) T (Arg);
+        new (&H::value) T ();
         H::once.unlock ();
     }
 
