@@ -106,7 +106,7 @@ size_t grid_align (size_t s)
 
 struct Sb_cache
 {
-    Sb_cache() {}
+    Sb_cache () {}
 
     Sb *pop (Pool *home, size_t size, size_t alignment, size_t engine_id)
     {
@@ -374,9 +374,9 @@ constexpr size_t log2(size_t n) {
 class EnginePool
 {
  
-    static size_t const plain_engines_count = LITE_MALLOC_ENGINES_COUNT;
+    static size_t const plain_engines_count   = LITE_MALLOC_ENGINES_COUNT;
     static size_t const aligned_engines_count = log2(lf::base_page) - 3;
-    static size_t const total_engines_count = plain_engines_count + aligned_engines_count;
+    static size_t const total_engines_count   = plain_engines_count + aligned_engines_count;
     Engine engines [total_engines_count];
 
     std::atomic<size_t> alloc_count;
@@ -388,7 +388,7 @@ class EnginePool
 
 public:
 
-    EnginePool (size_t dummy = 0) : alloc_count(0)
+    EnginePool () : alloc_count(0)
     {
         for (size_t i = 0; i < total_engines_count; ++i)
             engines [i].engine_id = i + 1;
@@ -439,7 +439,7 @@ public:
 
         align--;
         size = align_up (size, align);
-        
+
         for (size_t i = plain_engines_count; i < total_engines_count; ++i)
         {
             if (engines [i].alignment == align)
