@@ -81,8 +81,8 @@ There are five options:
 5. Compile a malloc hook static library into your dynamically-linked application. Follow the instructions in option 1, except omit the `-static` flag, and add these linker flags:
     ```
     -Wl,--defsym=malloc=__wrap_malloc -Wl,--defsym=free=__wrap_free -Wl,--defsym=calloc=__wrap_calloc
-    -Wl,--defsym=realloc=__wrap_realloc -Wl,--defsym=memalign=__wrap_memalign -Wl,--defsym=valloc=__wrap_valloc
-    -Wl,--defsym=posix_memalign=__wrap_posix_memalign
+    -Wl,--defsym=realloc=__wrap_realloc -Wl,--defsym=memalign=__wrap_memalign
+    -Wl,--defsym=valloc=__wrap_valloc -Wl,--defsym=posix_memalign=__wrap_posix_memalign
     ```
 
 *Important notes*:
@@ -96,26 +96,31 @@ limit via `/proc/sys/vm/max_map_count`.
 
 The allocator can be tuned with compile-time defines. Here are the supported options:
 
-    `LITE_MALLOC_SUPERBLOCK_CACHE_SIZE`
-     (default is 32)
-     Mmap blocks of size `LITE_MALLOC_SUPERBLOCK_CACHE_SIZE` * 4096 bytes and less will be cached.
-     (With a separate cache per size / 4096 bytes.)
+###### `LITE_MALLOC_SUPERBLOCK_CACHE_SIZE`
 
-    `LITE_MALLOC_MINIBLOCK_CACHE_SIZE`
-     (default is 1024)
-     Allocations of size `LITE_MALLOC_MINIBLOCK_CACHE_SIZE` * 8 bytes and less will be cached.
-     (With a separate cache per size / 8 bytes.)
+(default is 32)
 
-    `LITE_MALLOC_ENGINES_COUNT`
-     (default is 32)
-     This many independent allocator engines will be used.
+Mmap blocks of size `LITE_MALLOC_SUPERBLOCK_CACHE_SIZE` * 4096 bytes and less will be cached. (With a separate cache per size / 4096 bytes.)
 
-    `LITE_MALLOC_USE_PERTHREAD_ENGINES`
-     (default is 1)
-     If 1, pin a specific allocator engine to each thread. If 0, choose an allocator engine
-     round-robin for each allocation.
-     (Use 1 unless you have threads with highly unbalanced allocation workloads and are seeing
-     dramatic overhead.)
+###### `LITE_MALLOC_MINIBLOCK_CACHE_SIZE`
+
+(default is 1024)
+
+Allocations of size `LITE_MALLOC_MINIBLOCK_CACHE_SIZE` * 8 bytes and less will be cached. (With a separate cache per size / 8 bytes.)
+
+###### `LITE_MALLOC_ENGINES_COUNT`
+
+(default is 32)
+
+This many independent allocator engines will be used.
+
+###### `LITE_MALLOC_USE_PERTHREAD_ENGINES`
+
+(default is 1)
+
+If 1, pin a specific allocator engine to each thread. If 0, choose an allocator engine round-robin for each allocation.
+
+(Use 1 unless you have threads with highly unbalanced allocation workloads and are seeing dramatic overhead.)
 
 
 ## Credits ##
