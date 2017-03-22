@@ -114,6 +114,40 @@ If you want to allocate large amounts of memory, you may need to adjust this
 limit via /proc/sys/vm/max_map_count.
 
 
+Configuration:
+
+The allocator can be tuned with compile-time defines. Here are the supported options:
+
+   LITE_MALLOC_SUPERBLOCK_CACHE_SIZE
+
+     (default is 32)
+
+     Mmap blocks of size LITE_MALLOC_SUPERBLOCK_CACHE_SIZE * 4096 bytes and less will be cached.
+     (With a separate cache per size / 4096 bytes.)
+
+   LITE_MALLOC_MINIBLOCK_CACHE_SIZE
+
+     (default is 1024)
+
+     Allocations of size LITE_MALLOC_MINIBLOCK_CACHE_SIZE * 8 bytes and less will be cached.
+     (With a separate cache per size / 8 bytes.)
+
+   LITE_MALLOC_ENGINES_COUNT
+
+     (default is 32)
+
+     This many independent allocator engines will be used.
+
+   LITE_MALLOC_USE_PERTHREAD_ENGINES
+
+     (default is 1)
+
+     If 1, pin a specific allocator engine to each thread. If 0, choose an allocator engine
+     round-robin for each allocation.
+     (Use 1 unless you have threads with highly unbalanced allocation workloads and are seeing
+     dramatic overhead.)
+
+
 CREDITS
 -------------------------------------------------------------------
 

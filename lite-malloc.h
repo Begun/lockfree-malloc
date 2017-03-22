@@ -36,6 +36,12 @@
 #define LITE_MALLOC_ENGINES_COUNT 32
 #endif
 
+// Use per-thread engines instead of picking engines uniformly round-robin.
+
+#ifndef LITE_MALLOC_USE_PERTHREAD_ENGINES
+#define LITE_MALLOC_USE_PERTHREAD_ENGINES 1
+#endif
+
 
 #include <atomic>
 #include <stddef.h>
@@ -368,6 +374,12 @@ constexpr size_t log2(size_t n)
     return (n <= 1 ? 0 : 1 + log2(n / 2));
 }
 
+#if LITE_MALLOC_USE_PERTHREAD_ENGINES
+#define STATIC_THREAD_LOCAL static thread_local
+#else
+#define STATIC_THREAD_LOCAL
+#endif
+
 class EnginePool
 {
  
@@ -396,7 +408,7 @@ public:
 
     void *do_malloc (size_t size)
     {
-        static thread_local size_t en{++alloc_count % plain_engines_count};
+        STATIC_THREAD_LOCAL size_t en{++alloc_count % plain_engines_count};
 
         return engines [en].do_malloc(size);
     }
@@ -411,14 +423,14 @@ public:
 
     void *do_calloc (size_t n, size_t m)
     {
-        static thread_local size_t en{++alloc_count % plain_engines_count};
+        STATIC_THREAD_LOCAL size_t en{++alloc_count % plain_engines_count};
 
         return engines [en].do_calloc(n, m);
     }
 
     void *do_realloc (void *p, size_t size)
     {
-        static thread_local size_t en{++alloc_count % plain_engines_count};
+        STATIC_THREAD_LOCAL size_t en{++alloc_count % plain_engines_count};
         size_t engine = block_engine_n(p);
 
         if (!engine)
@@ -448,6 +460,8 @@ public:
         return 0;
     }
 };
+
+#undef STATIC_THREAD_LOCAL
 
 } //namespace lite
 
