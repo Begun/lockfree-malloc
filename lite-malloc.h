@@ -184,7 +184,15 @@ private:
                          MAP_PRIVATE | __MAP_ANONYMOUS | (hint ? MAP_FIXED : 0),
                          -1 /*fd*/,
                          0);
-        return (char *) ((long) p == -1 ? 0 : p);
+
+        char * ret = (char *) ((long) p == -1 ? 0 : p);
+
+#ifdef MADV_NOHUGEPAGE
+        if (ret) {
+            madvise (ret, size, MADV_NOHUGEPAGE);
+        }
+#endif
+        return ret;
     }
 
 };
