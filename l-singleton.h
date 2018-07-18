@@ -23,7 +23,7 @@ namespace lockfree
 
 struct Once
 {
-    Once() : l(2) {}
+    constexpr Once() : l(2) {}
 
     std::atomic <int> l;
 
